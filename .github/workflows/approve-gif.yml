@@ -1,0 +1,173 @@
+name: Approve GIF Submission
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  approve-gif:
+    if: github.event.label.name == 'approved'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for gif-submission label
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name);
+            if (!labels.includes('gif-submission')) {
+              core.setOutput('skip', 'true');
+              console.log('Not a gif-submission issue, skipping.');
+            } else {
+              core.setOutput('skip', 'false');
+            }
+
+      - name: Checkout repo
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/checkout@v4
+
+      - name: Parse and append GIF
+        if: steps.check.outputs.skip != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+
+            // Parse GitHub issue form fields
+            function parseField(label) {
+              // Issue forms render as: ### Label\n\nValue\n\n### Next
+              const regex = new RegExp('###\\s*' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\n+([\\s\\S]*?)(?=\\n###|$)');
+              const match = body.match(regex);
+              return match ? match[1].trim() : '';
+            }
+
+            const gifTitle = parseField('GIF title');
+            const gifUrl = parseField('GIF URL');
+            const category = parseField('Category');
+            const tagsRaw = parseField('Tags');
+
+            // Validate
+            const errors = [];
+            if (!gifTitle) errors.push('GIF title is missing.');
+            if (!gifUrl) errors.push('GIF URL is missing.');
+            if (!category) errors.push('Category is missing.');
+            if (!tagsRaw) errors.push('Tags are missing.');
+
+            if (gifUrl) {
+              try {
+                const u = new URL(gifUrl);
+                if (u.protocol !== 'https:' && u.protocol !== 'http:') {
+                  errors.push('URL must use http(s) protocol.');
+                }
+                if (gifUrl.includes('javascript:')) {
+                  errors.push('Invalid URL scheme.');
+                }
+              } catch {
+                errors.push('GIF URL is not a valid URL.');
+              }
+            }
+
+            if (errors.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `❌ **Could not approve this GIF.** Missing or invalid fields:\n\n${errors.map(e => '- ' + e).join('\n')}\n\nPlease update the issue and re-apply the \`approved\` label.`
+              });
+              core.setFailed('Validation failed: ' + errors.join(' '));
+              return;
+            }
+
+            // Build slug
+            const slug = gifTitle
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+              .substring(0, 60);
+
+            // Parse tags
+            const tags = tagsRaw
+              .split(',')
+              .map(t => t.trim().toLowerCase().replace(/\s+/g, '-'))
+              .filter(Boolean);
+
+            // Read existing catalog
+            const catalogPath = 'gifs.json';
+            let catalog = [];
+            try {
+              catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+            } catch {
+              catalog = [];
+            }
+
+            // Check for duplicate URL
+            if (catalog.some(g => g.url === gifUrl)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `⚠️ This GIF URL already exists in the catalog. No duplicate added.\n\nClosing this issue.`
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed'
+              });
+              return;
+            }
+
+            // Ensure unique slug
+            let finalSlug = slug;
+            let counter = 2;
+            while (catalog.some(g => g.id === finalSlug)) {
+              finalSlug = slug + '-' + counter;
+              counter++;
+            }
+
+            // Build new entry
+            const newGif = {
+              id: finalSlug,
+              title: gifTitle,
+              url: gifUrl,
+              category: category,
+              tags: tags,
+              source: gifUrl.includes('giphy.com') ? 'giphy' : gifUrl.includes('tenor.com') ? 'tenor' : 'other',
+              attribution: 'Submitted by @' + (issue.user ? issue.user.login : 'unknown'),
+              added: new Date().toISOString().split('T')[0]
+            };
+
+            catalog.push(newGif);
+
+            // Write back
+            fs.writeFileSync(catalogPath, JSON.stringify(catalog, null, 2) + '\n');
+
+            // Commit
+            const { execSync } = require('child_process');
+            execSync('git config user.name "github-actions[bot]"');
+            execSync('git config user.email "41898282+github-actions[bot]@users.noreply.github.com"');
+            execSync('git add gifs.json');
+            execSync(`git commit -m "feat: add GIF '${gifTitle.replace(/'/g, "\\'")}' from #${issue.number}"`);
+            execSync('git push');
+
+            // Comment and close
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              body: `✅ **GIF approved and added!**\n\n**Title:** ${gifTitle}\n**Slug:** \`${finalSlug}\`\n**Category:** ${category}\n\nIt will appear on the site after the next GitHub Pages deploy.\n\nDirect link: https://gunratna911.github.io/LGTMGifs/?gif=${finalSlug}`
+            });
+
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'closed'
+            });
+
+            console.log('Successfully added GIF:', finalSlug);

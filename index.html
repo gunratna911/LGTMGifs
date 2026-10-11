@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GIF Club — Find Your Reaction</title>
+  <meta name="description" content="Discover and share reaction GIFs.">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #101114;
+      color: #f5f5f7;
+      font-family: system-ui, sans-serif;
+    }
+    header {
+      padding: 24px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #292a30;
+      gap: 16px;
+    }
+    .logo { font-size: 23px; font-weight: 800; }
+    .logo span { color: #a78bfa; }
+    a { color: inherit; text-decoration: none; }
+    .submit {
+      background: #a78bfa;
+      color: #171322;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    main { max-width: 1200px; margin: auto; padding: 48px 20px; }
+    .hero { text-align: center; margin-bottom: 34px; }
+    h1 { font-size: clamp(32px, 6vw, 56px); margin: 0 0 12px; }
+    .muted { color: #a3a3ad; }
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #383941;
+      background: #1b1c21;
+      border-radius: 12px;
+      color: white;
+      font: inherit;
+    }
+    .search { max-width: 600px; margin: 24px auto; }
+    .filters {
+      display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 9px; margin: 22px 0 30px;
+    }
+    .filters button {
+      padding: 9px 15px; border-radius: 22px;
+      border: 1px solid #393943; color: white;
+      background: #1b1c21; cursor: pointer;
+    }
+    .filters button.active { background: #a78bfa; color: #171322; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: #1b1c21; border: 1px solid #2b2c33;
+      border-radius: 14px; overflow: hidden;
+    }
+    .card img {
+      display: block; width: 100%; aspect-ratio: 4/3;
+      object-fit: cover; background: #292a30;
+    }
+    .card h3 { font-size: 15px; margin: 13px; }
+    .empty { text-align: center; padding: 30px; color: #aaa; }
+    footer {
+      padding: 32px 20px; text-align: center;
+      border-top: 1px solid #292a30; color: #a3a3ad;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="logo" href="#">GIF<span>Club</span></a>
+    <a class="submit" href="#submit">Submit a GIF ↗</a>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Find your reaction.</h1>
+      <p class="muted">The perfect GIF for every moment.</p>
+      <div class="search">
+        <input id="search" placeholder="Search GIFs..." aria-label="Search GIFs">
+      </div>
+    </section>
+
+    <nav class="filters" id="filters" aria-label="GIF categories">
+      <button class="active" data-category="All">All GIFs</button>
+      <button data-category="Reactions">Reactions</button>
+      <button data-category="Funny">Funny</button>
+      <button data-category="Love">Love</button>
+      <button data-category="Work">Work</button>
+    </nav>
+
+    <section class="grid" id="gallery"></section>
+
+    <section id="submit" style="text-align:center; margin:65px 0 20px">
+      <h2>Got a great GIF?</h2>
+      <p class="muted">Send it to us for review. Approved GIFs can join the gallery.</p>
+      <a class="submit" id="submitLink" href="#">Suggest a GIF</a>
+      <p class="muted" style="font-size:13px">
+        Community submissions are reviewed before publication.
+      </p>
+    </section>
+  </main>
+
+  <footer>GIF Club · Made for the internet</footer>
+
+  <script>
+    // Demo entries only. Replace these with approved GIF entries.
+    const gifs = [
+      {
+        title: "Mind Blown",
+        category: "Reactions",
+        tags: "wow surprise amazed",
+        url: "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjEx/26ufdipQqU2lhNA4g/giphy.gif"
+      },
+      {
+        title: "Happy Dance",
+        category: "Funny",
+        tags: "happy celebration dance",
+        url: "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif"
+      },
+      {
+        title: "Love It",
+        category: "Love",
+        tags: "love heart cute",
+        url: "https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+      }
+    ];
+
+    let category = "All";
+    const gallery = document.getElementById("gallery");
+    const search = document.getElementById("search");
+
+    function render() {
+      const query = search.value.trim().toLowerCase();
+      const filtered = gifs.filter(g =>
+        (category === "All" || g.category === category) &&
+        (g.title + " " + g.tags + " " + g.category)
+          .toLowerCase().includes(query)
+      );
+
+      gallery.replaceChildren();
+
+      if (!filtered.length) {
+        gallery.innerHTML = '<p class="empty">No GIFs found. Try another search.</p>';
+        return;
+      }
+
+      filtered.forEach(g => {
+        const card = document.createElement("article");
+        card.className = "card";
+        const img = document.createElement("img");
+        img.src = g.url;
+        img.alt = g.title;
+        img.loading = "lazy";
+        img.onerror = () => { img.alt = "GIF preview unavailable"; };
+        const title = document.createElement("h3");
+        title.textContent = g.title;
+        card.append(img, title);
+        gallery.append(card);
+      });
+    }
+
+    document.getElementById("filters").addEventListener("click", e => {
+      if (e.target.tagName !== "BUTTON") return;
+      category = e.target.dataset.category;
+      document.querySelectorAll(".filters button").forEach(b =>
+        b.classList.toggle("active", b === e.target)
+      );
+      render();
+    });
+
+    search.addEventListener("input", render);
+
+    // Replace YOUR_GITHUB_USERNAME with your actual GitHub username.
+    document.getElementById("submitLink").href =
+      "https://github.com/YOUR_GITHUB_USERNAME/gif-community/issues/new";
+
+    render();
+  </script>
+</body>
+</html>

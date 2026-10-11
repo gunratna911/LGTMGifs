@@ -1,0 +1,60 @@
+name: Submit a GIF
+description: Suggest a GIF for the community gallery
+title: "[GIF] "
+labels:
+  - gif-submission
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing! Every GIF is reviewed by an admin
+        before it can appear on the public website.
+
+  - type: input
+    id: gif_title
+    attributes:
+      label: GIF title
+      description: Give your GIF a short, descriptive name.
+      placeholder: Mind blown
+    validations:
+      required: true
+
+  - type: input
+    id: gif_url
+    attributes:
+      label: GIF URL
+      description: Paste a direct GIF image URL or a supported provider URL.
+      placeholder: https://example.com/animation.gif
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Reactions
+        - Funny
+        - Work
+        - Love
+        - Celebrations
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: tags
+    attributes:
+      label: Tags
+      description: Separate keywords with commas.
+      placeholder: funny, reaction, wow
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Permissions
+      options:
+        - label: I have the right to share this GIF or am providing it for review with its source.
+          required: true

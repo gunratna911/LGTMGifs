@@ -1,0 +1,32 @@
+[
+  {
+    "id": "bonus-mind-blown",
+    "name": "Mind Blown",
+    "tags": ["Mind Blown", "Wow", "Surprise", "Amazed"],
+    "url": "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+    "smallUrl": "https://media.giphy.com/media/26ufdipQqU2lhNA4g/200w.webp",
+    "width": 200,
+    "height": 112,
+    "sourceUrl": "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif"
+  },
+  {
+    "id": "bonus-happy-dance",
+    "name": "Happy Dance",
+    "tags": ["Happy", "Dance", "Celebration"],
+    "url": "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif",
+    "smallUrl": "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif",
+    "width": 200,
+    "height": 150,
+    "sourceUrl": "https://media.giphy.com/media/5GoVLqeAOo6PK/giphy.gif"
+  },
+  {
+    "id": "bonus-love-it",
+    "name": "Love It",
+    "tags": ["Love", "Heart", "Cute"],
+    "url": "https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif",
+    "smallUrl": "https://media.giphy.com/media/26BRv0ThflsHCqDrG/200w.webp",
+    "width": 200,
+    "height": 140,
+    "sourceUrl": "https://media.giphy.com/media/26BRv0ThflsHCqDrG/giphy.gif"
+  }
+]
